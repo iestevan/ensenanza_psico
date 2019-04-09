@@ -10,7 +10,11 @@ El producto debería permitir
 
 Se necesita un diccionario para enlazar las distintas maneras de llamar a un docente en los distintos sistemas de información.
 
-Nos estanmos centrando en los datos 2018. Hasta ahora se consiguió:
+Nos estanmos centrando en los datos 2018.
+
+El archivo ensenanza_psico.Rproj permite trabajar desde R con git.
+
+Hasta ahora se consiguió:
 
 *El diccionario que comunica los nombres de los docentes de psico.edu.uy con el SIFP: diccionario2
 
