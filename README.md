@@ -5,7 +5,9 @@ Existen dos fuentes de información:
 *El Sistema de Información de la Facultad de Psicología (http://sifp.psico.edu.uy/), donde se alojan fichas de cada curso, clasificadas según tipo de curso (UCOS, optativas, prácticas y proyectos) y otras informaciones según cada tipo de curso. En las fichas los existen varias maneras de nombrar a cada docente.
 
 El producto debería permitir
+
 *buscar por docente o por grupo de docentes la cantidad de enseñanza que se realiza.
+
 *buscar por curso o grupo de cursos la cantidad de enseñanza que demanda.
 
 Se necesita un diccionario para enlazar las distintas maneras de llamar a un docente en los distintos sistemas de información.
