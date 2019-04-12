@@ -1,6 +1,6 @@
 
 #----
-#librerías y directorio
+#librerias y directorio
 #----
 
 library(rvest)
@@ -17,7 +17,7 @@ library(stringr)
 #-----
 
 #docentes de mdeo en la web----
-mdeo = c(158:162, 350:352) # a manopla? de donde sale esto?
+mdeo = c(158:162, 350:352) #sale de filtrar en la pagina de busqueda: fund(152)-educa(162), cibpsi(350), cicp(351), ceis(352)
 rm(docentes_cargos)
 for(i in mdeo){
   post=POST(url= paste0("https://psico.edu.uy/directorio/docentes-?field_perfil_nombre_value=&field_perfil_instituto_target_id=",i,""))
@@ -59,13 +59,13 @@ for(i in docentes_cargos$enlace.web.docente){
 rm(i, datosC, datosR, df, web)
 
 trabajadores_spread = trabajadores %>%
-  filter(campos == "Provisión:" |
+  filter(campos == "ProvisiÃ³n:" |
            campos == "Grado:" |
-           campos == "Horas/Extensión:" |
+           campos == "Horas/ExtensiÃ³n:" |
            campos == "Instituto / Centro:" |
            campos=="DT:") %>%
   spread(campos, contenido) %>%
-  separate ('Horas/Extensión:', c("horas.base", "horas.con.ext"), fill = "left") %>%
+  separate ('Horas/ExtensiÃ³n:', c("horas.base", "horas.con.ext"), fill = "left") %>%
   droplevels()
 
 names(trabajadores_spread) = c("enlace.web.docente", "DT", "Grado","H.base", "H.con.ext", "Instituto", "Tipo")
@@ -73,7 +73,7 @@ names(trabajadores_spread) = c("enlace.web.docente", "DT", "Grado","H.base", "H.
 #combino----
 docentes_cargos = docentes_cargos %>%
   left_join(., trabajadores_spread, by = "enlace.web.docente") %>%
-  mutate(nombre.web = chartr("áéíóúÁÉÍÓÚ", "aeiouAEIOU", nombre.web)) %>%
+  mutate(nombre.web = chartr("Ã¡Ã©Ã­Ã³ÃºÃÃ‰ÃÃ“Ãš", "aeiouAEIOU", nombre.web)) %>%
   arrange(nombre.web)
 rm(trabajadores, trabajadores_spread)
 
