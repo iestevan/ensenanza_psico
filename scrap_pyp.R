@@ -88,3 +88,5 @@ names(pyp_docentes) = c("enlace.SIFP.pyp", "creditos", "enlace.SIFP.docente")
 pyp_listado <-pyp_listado %>% 
   left_join(., pyp_docentes, by="enlace.SIFP.pyp")
 rm(pyp_docentes)
+
+save(pyp_listado,file="pyp_listado.RData")
