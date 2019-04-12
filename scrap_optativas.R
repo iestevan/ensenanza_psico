@@ -1,6 +1,6 @@
 
 #----
-#librerías y directorio
+#librerias y directorio
 #----
 
 library(rvest)
@@ -111,4 +111,4 @@ names(creditos_optativas) <- c("Creditos")
 optativas_listado <- bind_cols(optativas_listado, optativas_docentes)
 optativas_listado <- bind_cols(optativas_listado, creditos_optativas)
 
-save(optativas_listado,file="optativas_listad.RData")
+save(optativas_listado,file="optativas_listado.RData")
