@@ -41,9 +41,9 @@ rm(year, ciclo, i, j, pyp, nodo_pyp, enlaces)
 pyp_listado = pyp_listado %>%
   select (-Instituto) %>% 
   distinct() %>% 
-  select (ciclo, Año, Código,`Código de horario`, Cupos, ciclo, enlace.SIFP.pyp)
+  select (ciclo, AÃ±o, CÃ³digo,`CÃ³digo de horario`, Cupos, ciclo, enlace.SIFP.pyp)
 
-rep = data.frame(origen = c("á", "é", "í", "ó", "ú", "ñ"), destino = c("a", "e", "i", "o", "u", "n"))
+rep = data.frame(origen = c("Ã¡", "Ã©", "Ã­", "Ã³", "Ãº", "Ã±"), destino = c("a", "e", "i", "o", "u", "n"))
 for (i in 1:nrow(rep)){
   origen = rep[i, "origen"]
   destino = rep[i, "destino"]
@@ -62,7 +62,7 @@ for(i in pyp_listado$enlace.SIFP.pyp){
   # # Obtengo creditos por optativa
   texto = as.character(web)
   texto_ok = str_replace_all(texto, "[\r\n]" , "")
-  get_creditos = 'Créditos:.</div><div class=\\\"field-items\\\"><div class=\\\"field-item even\\\">([^</div]*)'
+  get_creditos = 'Crï¿½ditos:.</div><div class=\\\"field-items\\\"><div class=\\\"field-item even\\\">([^</div]*)'
   creditos = str_match(texto_ok, get_creditos)
   
   lista$creditos = creditos[2]
@@ -88,3 +88,5 @@ names(pyp_docentes) = c("enlace.SIFP.pyp", "creditos", "enlace.SIFP.docente")
 pyp_listado <-pyp_listado %>% 
   left_join(., pyp_docentes, by="enlace.SIFP.pyp")
 rm(pyp_docentes)
+
+save(pyp_listado,file="pyp_listado.RData")

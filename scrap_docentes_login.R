@@ -16,6 +16,11 @@ library(stringr)
 #listado de docentes
 #-----
 
+# URL DE LOGUEO SIFP
+url_sifp_login="https://sifp.psico.edu.uy/?q=user"
+url_sifp_descarga_xls_listado_docentes="https://sifp.psico.edu.uy/listado-de-docentes.xls"
+
+
 #docentes de mdeo en la web----
 mdeo = c(158:162, 350:352) #sale de filtrar en la pagina de busqueda: fund(152)-educa(162), cibpsi(350), cicp(351), ceis(352)
 rm(docentes_cargos)
@@ -65,7 +70,7 @@ trabajadores_spread = trabajadores %>%
            campos == "Instituto / Centro:" |
            campos=="DT:") %>%
   spread(campos, contenido) %>%
-  separate ('Horas/Extensión:', c("horas.base", "horas.con.ext"), fill = "left") %>%
+  separate ('Horas/Extensiñón:', c("horas.base", "horas.con.ext"), fill = "left") %>%
   droplevels()
 
 names(trabajadores_spread) = c("enlace.web.docente", "DT", "Grado","H.base", "H.con.ext", "Instituto", "Tipo")
@@ -76,6 +81,6 @@ docentes_cargos = docentes_cargos %>%
   mutate(nombre.web = chartr("áéíóúÁÉÍÓÚ", "aeiouAEIOU", nombre.web)) %>%
   arrange(nombre.web)
 rm(trabajadores, trabajadores_spread)
-
+save(docentes_cargos,file="docentes_cargos.RData")
 #write.csv(docentes_cargos, file = "docentes_cargos.csv", row.names=FALSE)
 #docentes_cargos = read.csv("docentes_cargos.csv", header = TRUE)
