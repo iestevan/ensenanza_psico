@@ -16,71 +16,89 @@ library(stringr)
 #listado de docentes
 #-----
 
+#logueado a la web del SIFP----
 # URL DE LOGUEO SIFP
 url_sifp_login="https://sifp.psico.edu.uy/?q=user"
-url_sifp_descarga_xls_listado_docentes="https://sifp.psico.edu.uy/listado-de-docentes.xls"
 
+#create a web session with the desired login address
+session<-html_session(url_sifp_login)
+nodo_form <- html_node(session, xpath = '//*[@id="user-login"]')
+form<-html_form(nodo_form)
+filled_form<-set_values(form, name="*****", pass="******") #hay que completarlo con un usuario y una clave
+submit_form(session, filled_form)
 
-#docentes de mdeo en la web----
-mdeo = c(158:162, 350:352) #sale de filtrar en la pagina de busqueda: fund(152)-educa(162), cibpsi(350), cicp(351), ceis(352)
-rm(docentes_cargos)
-for(i in mdeo){
-  post=POST(url= paste0("https://psico.edu.uy/directorio/docentes-?field_perfil_nombre_value=&field_perfil_instituto_target_id=",i,""))
-  cargos=read_html(post)
-  nodo_car <- html_node(cargos, 'table')
-  df <- data.frame(html_table(nodo_car)[,2])
-  names(df) = c("nombre.web")
-  
-  enlaces <- data.frame(html_attr(html_nodes(nodo_car, "a"), "href"))
-  names(enlaces) = c("enlace.web.docente")
-  
-  df$enlace.web.docente = enlaces$enlace.web.docente
-  
-  if(exists("docentes_cargos")){
-    docentes_cargos <- rbind(docentes_cargos, df)
-  } else {docentes_cargos <- df}
-}
-rm(i, mdeo, post, cargos, enlaces, nodo_car, df)
-docentes_cargos = docentes_cargos %>%
-  distinct()
+#listado de docentes en SIFP----
+listado_SIFP = session %>% 
+  jump_to(url= "https://sifp.psico.edu.uy/listado-de-docentes") %>%
+  read_html() %>%
+  html_node('table') %>% 
+  html_table()
 
-#levanto info de cada web personal----
+enlaces <- session %>% 
+  jump_to(url= "https://sifp.psico.edu.uy/listado-de-docentes") %>%
+  read_html() %>%
+  html_node('table') %>% 
+  html_nodes("a") %>% 
+  html_attr("href")
+
+listado_SIFP$enlace.SIFP.docente = enlaces
+listado_SIFP$enlace.SIFP.docente <- paste("https://sifp.psico.edu.uy", listado_SIFP$enlace.SIFP.docente, sep="")
+rm(enlaces)
+
+#levanto datos de la web de cada docente en el SIFP----
 rm(trabajadores)
-for(i in docentes_cargos$enlace.web.docente){
-  web=tryCatch({read_html(paste0("https://psico.edu.uy",i,""))},
-               error=function(e) NA)
+for(i in docentes.SIFP$enlace.SIFP.docente ){
+  nombres = session %>% 
+    jump_to(url= i) %>% 
+    read_html() %>% 
+    html_node (xpath = "/html/body/div[1]/div[2]/div[1]/div[3]/div/section/div/div/div/div/div[2]/fieldset/div") %>% 
+    html_nodes (".field-label") %>% 
+    html_text() %>% 
+    str_trim() %>% 
+    as.data.frame()
+
+  datos = session %>% 
+    jump_to(url= i) %>% 
+    read_html() %>% 
+    html_node (xpath = "/html/body/div[1]/div[2]/div[1]/div[3]/div/section/div/div/div/div/div[2]/fieldset/div") %>% 
+    html_nodes (".even") %>% 
+    html_text() %>% 
+    str_trim() %>% 
+    as.data.frame()
   
-  if(!is.na(web)){
-    
-    datosC <- data.frame(html_text(html_nodes(web,'.field__label'))[c(4:13)])
-    datosR <- data.frame(html_text(html_nodes(web,'.field__item'))[c(6:15)])
-    df <- cbind(i, datosC, datosR)
-    names(df) = c("enlace.web.docente", "campos", "contenido")
-  }
+  
+  df <- cbind(i, nombres, datos)
+  names(df) = c("enlace.SIFP.docente", "campos", "contenido")
+  
   if(exists("trabajadores")){
     trabajadores <- rbind(trabajadores, df)
   } else {trabajadores <- df}
 }
-rm(i, datosC, datosR, df, web)
+
+rm(i, nombres, datos, df)
 
 trabajadores_spread = trabajadores %>%
-  filter(campos == "Provisión:" |
-           campos == "Grado:" |
-           campos == "Horas/Extensión:" |
-           campos == "Instituto / Centro:" |
-           campos=="DT:") %>%
+  filter(campos == "Grado:" |
+           campos == "Horas base:" |
+           campos == "Horas extensi�n:" |
+           campos == "Horas reducci�n:" |
+           campos=="Dedicaci�n total:") %>%
   spread(campos, contenido) %>%
-  separate ('Horas/Extensiñón:', c("horas.base", "horas.con.ext"), fill = "left") %>%
+  rename(Grado = 'Grado:',
+         Horas.base = 'Horas base:',
+         Horas.extension = 'Horas extensi�n:',
+         Horas.reduccion = "Horas reducci�n:",
+         DT= 'Dedicaci�n total:')
   droplevels()
 
-names(trabajadores_spread) = c("enlace.web.docente", "DT", "Grado","H.base", "H.con.ext", "Instituto", "Tipo")
+#combino para crear docentes_SIPF----
+docentes_SIFP = docentes_SIFP %>%
+  select (Apellido, Nombre, Instituto, enlace.SIFP.docente) %>%
+  left_join(., trabajadores_spread, by = "enlace.SIFP.docente")
 
-#combino----
-docentes_cargos = docentes_cargos %>%
-  left_join(., trabajadores_spread, by = "enlace.web.docente") %>%
-  mutate(nombre.web = chartr("áéíóúÁÉÍÓÚ", "aeiouAEIOU", nombre.web)) %>%
-  arrange(nombre.web)
-rm(trabajadores, trabajadores_spread)
-save(docentes_cargos,file="docentes_cargos.RData")
+save(docentes_SIFP,file="docentes_SIFP.RData")
+
+rm(trabajadores, trabajadores_spread, listado_SIFP, session, nodo_form, filled_form, url_sifp_login)
+
 #write.csv(docentes_cargos, file = "docentes_cargos.csv", row.names=FALSE)
 #docentes_cargos = read.csv("docentes_cargos.csv", header = TRUE)
