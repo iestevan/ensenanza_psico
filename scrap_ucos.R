@@ -70,6 +70,7 @@ ucos_horarios = ucos_horarios %>%
   mutate(grupo = c(1:length(ucos_horarios$enlace.SIFP.ucos)))
 
 #https://stringr.tidyverse.org/articles/regular-expressions.html
+#intento identificar los horarios de plenarios (más de 90 estudiantes)
 ucos_horarios_plenario = ucos_horarios %>%
   filter(!grepl('(Seminario)', `Código de horario`),
          enlace.SIFP.ucos!="/guias/90/view" | grepl('(PLENARIO)', `Código de horario`),
@@ -80,6 +81,7 @@ ucos_horarios_plenario = ucos_horarios %>%
   select(grupo) %>% 
   mutate (Dispositivo = "Plenario")
 
+#intento identificar los horarios de seminarios (menos de 40 estudiantes)
 ucos_horarios_seminario = ucos_horarios %>%
   filter(grepl('(Seminario)', `Código de horario`) |
            enlace.SIFP.ucos=="/guias/90/view" & !grepl('(PLENARIO)', `Código de horario`) |
@@ -110,13 +112,14 @@ ucos_horarios_docentes = ucos_horarios %>%
   mutate_all(na_if,"") %>%
   arrange(grupo)
 
+#genero un DF con cada horario, el tipo de dispositivo y el docente responsable
 ucos_horarios = ucos_horarios %>%
   left_join(., ucos_horarios_docentes, by="grupo") %>% 
-  left_join(., ucos_horarios_dispositivos, by="grupo") 
+  left_join(., ucos_horarios_dispositivos, by="grupo")
 
 rm(ucos_horarios_dispositivos, ucos_horarios_docentes, ucos_horarios_plenario, ucos_horarios_seminario)
 
-#agrego grupos y docentes a cada uco----
+#agrego grupos totales y según dispositivo----
 ucos = ucos_horarios %>%
   filter (Dispositivo == "Plenario") %>% 
   distinct(grupo, .keep_all = TRUE) %>%
@@ -133,7 +136,14 @@ ucos = ucos_horarios %>%
 
 ucos = ucos_horarios %>%
   group_by(enlace.SIFP.ucos) %>%
-  summarise (Cantidad.docentes = n()) %>%
+  summarise (Cantidad.grupos = n()) %>%
   left_join(ucos, ., by="enlace.SIFP.ucos")
 
 rm(ucos_listado)
+
+#guardo las salidas----
+#ucos: resume para cada UcO la cantidad Seminarios, de plenarios y la suma
+#ucos_horarios: para cada horario de cada UCO el tipo de dispositivo y el docente responsable
+
+save(ucos,file="ucos.RData")
+save(ucos_horarios,file="ucos_horarios.RData")
