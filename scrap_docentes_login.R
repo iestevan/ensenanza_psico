@@ -96,9 +96,14 @@ docentes_SIFP = docentes_SIFP %>%
   select (Apellido, Nombre, Instituto, enlace.SIFP.docente) %>%
   left_join(., trabajadores_spread, by = "enlace.SIFP.docente")
 
+#agrego nombre en ucos y en web a partir del diccionario
+
+#diccionario2 = read.csv("diccionario2_mano.csv", header = TRUE)
+  
+docentes_SIFP = docentes_SIFP2 %>% 
+  unite(nombre.SIFP, c(Nombre, Apellido), sep = " ", remove = TRUE) %>% 
+  left_join(diccionario2, ., by = "nombre.SIFP")
+  
 save(docentes_SIFP,file="docentes_SIFP.RData")
 
 rm(trabajadores, trabajadores_spread, listado_SIFP, session, nodo_form, filled_form, url_sifp_login)
-
-#write.csv(docentes_cargos, file = "docentes_cargos.csv", row.names=FALSE)
-#docentes_cargos = read.csv("docentes_cargos.csv", header = TRUE)
