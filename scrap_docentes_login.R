@@ -107,6 +107,3 @@ docentes_SIFP = docentes_SIFP2 %>%
 save(docentes_SIFP,file="docentes_SIFP.RData")
 
 rm(trabajadores, trabajadores_spread, listado_SIFP, session, nodo_form, filled_form, url_sifp_login)
-
-#write.csv(docentes_cargos, file = "docentes_cargos.csv", row.names=FALSE)
-#docentes_cargos = read.csv("docentes_cargos.csv", header = TRUE)
