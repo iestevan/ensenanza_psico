@@ -1,6 +1,6 @@
 
 #----
-#librer韆s y directorio
+#librer铆as y directorio
 #----
 
 library(rvest)
@@ -21,7 +21,7 @@ for (i in year){
   ucos <- read_html(paste0("https://sifp.psico.edu.uy/guias-uco-publicadas?unidad_curricular=&ciclo=&modulo=&anio=",year,"&anio_vigencia="))
   nodo_ucos <-html_node(ucos, xpath = '/html/body/div[1]/div/div[1]/div[3]/div/section/div/div/div/div/div[2]/table')
   ucos <- html_table(nodo_ucos)
-  ucos$a駉 = year
+  ucos$a帽o = year
   
   enlaces <- data.frame(html_attr(html_nodes(nodo_ucos, "a"), "href"))
   names(enlaces) = c("enlace.SIFP.ucos")
@@ -33,13 +33,14 @@ for (i in year){
 }
 rm(year, i, ucos, nodo_ucos, enlaces)
 ucos_listado = ucos_listado %>%
-  select (`Unidad curricular`, Ciclo, M骴ulo, Creditos, a駉, enlace.SIFP.ucos) %>%
-  arrange(Ciclo, M骴ulo, `Unidad curricular`)
+  select (`Unidad curricular`, Ciclo, M贸dulo, Creditos, a帽o, enlace.SIFP.ucos) %>%
+  arrange(Ciclo, M贸dulo, `Unidad curricular`)
+ucos_listado$enlace.SIFP.ucos <- paste("https://sifp.psico.edu.uy", ucos_listado$enlace.SIFP.ucos, sep="")
 
 #extraigo docentes y grupos de las fichas----
 rm(ucos_docentes, ucos_horarios)
 for(i in ucos_listado$enlace.SIFP.ucos){
-  web=tryCatch({read_html(paste0("https://sifp.psico.edu.uy",i,"/"))},
+  web=tryCatch({read_html(i)},
                error=function(e) NA)
   
   if(!is.na(web)){
@@ -70,24 +71,24 @@ ucos_horarios = ucos_horarios %>%
   mutate(grupo = c(1:length(ucos_horarios$enlace.SIFP.ucos)))
 
 #https://stringr.tidyverse.org/articles/regular-expressions.html
-#intento identificar los horarios de plenarios (m醩 de 90 estudiantes)
+#intento identificar los horarios de plenarios (m谩s de 90 estudiantes)
 ucos_horarios_plenario = ucos_horarios %>%
-  filter(!grepl('(Seminario)', `C骴igo de horario`),
-         enlace.SIFP.ucos!="/guias/90/view" | grepl('(PLENARIO)', `C骴igo de horario`),
+  filter(!grepl('(Seminario)', `C贸digo de horario`),
+         enlace.SIFP.ucos!="/guias/90/view" | grepl('(PLENARIO)', `C贸digo de horario`),
          enlace.SIFP.ucos!="/guias/192/view",
-         enlace.SIFP.ucos!="/guias/173/view" | grepl('(PLENARIO)', `C骴igo de horario`),
-         enlace.SIFP.ucos!="/guias/179/view" | grepl('(Plenario)', `C骴igo de horario`)
+         enlace.SIFP.ucos!="/guias/173/view" | grepl('(PLENARIO)', `C贸digo de horario`),
+         enlace.SIFP.ucos!="/guias/179/view" | grepl('(Plenario)', `C贸digo de horario`)
   ) %>%
   select(grupo) %>% 
   mutate (Dispositivo = "Plenario")
 
 #intento identificar los horarios de seminarios (menos de 40 estudiantes)
 ucos_horarios_seminario = ucos_horarios %>%
-  filter(grepl('(Seminario)', `C骴igo de horario`) |
-           enlace.SIFP.ucos=="/guias/90/view" & !grepl('(PLENARIO)', `C骴igo de horario`) |
+  filter(grepl('(Seminario)', `C贸digo de horario`) |
+           enlace.SIFP.ucos=="/guias/90/view" & !grepl('(PLENARIO)', `C贸digo de horario`) |
            enlace.SIFP.ucos=="/guias/192/view" |
-           enlace.SIFP.ucos=="/guias/173/view" & !grepl('(PLENARIO)', `C骴igo de horario`) |
-           enlace.SIFP.ucos=="/guias/179/view" & !grepl('(Plenario)', `C骴igo de horario`)
+           enlace.SIFP.ucos=="/guias/173/view" & !grepl('(PLENARIO)', `C贸digo de horario`) |
+           enlace.SIFP.ucos=="/guias/179/view" & !grepl('(Plenario)', `C贸digo de horario`)
   ) %>% 
   select(grupo) %>% 
   mutate (Dispositivo = "Seminario")
@@ -95,31 +96,31 @@ ucos_horarios_seminario = ucos_horarios %>%
 ucos_horarios_dispositivos = rbind (ucos_horarios_plenario, ucos_horarios_seminario)
 
 ucos_horarios_docentes = ucos_horarios %>%
-  mutate(`C骴igo de horario` = chartr("衢眢赏于", "aeiouAEIOU", `C骴igo de horario`)) %>%
-  mutate(`C骴igo de horario` = str_remove (`C骴igo de horario`, regex(".*Do.*ente[:alpha:]*[^[:alpha:]]{0,2}", ignore_case = TRUE))) %>%
-  mutate(`C骴igo de horario` = str_remove (`C骴igo de horario`, regex(".*Grupo\\s*\\d[^[:alpha:]]{0,3}", ignore_case = TRUE)))%>%
-  mutate(`C骴igo de horario` = str_remove (`C骴igo de horario`, regex(".*EFI[^[:alpha:]]{0,3}", ignore_case = TRUE)))%>%
-  mutate(`C骴igo de horario` = str_remove (`C骴igo de horario`, regex(".*\\d{1,2}/\\d{1,2}[^[:alpha:]]{0,3}", ignore_case = TRUE)))%>%
-  mutate(`C骴igo de horario` = str_remove (`C骴igo de horario`, regex("[^a-z]{0,3}Codigo.*", ignore_case = TRUE)))%>%
-  mutate(`C骴igo de horario` = str_remove (`C骴igo de horario`, regex(".*confirma.*", ignore_case = TRUE)))%>%
-  mutate(`C骴igo de horario` = str_remove (`C骴igo de horario`, regex(".*informa.*", ignore_case = TRUE)))%>%
-  mutate(`C骴igo de horario` = str_remove (`C骴igo de horario`, regex(".*plenario.*", ignore_case = TRUE))) %>%
-  mutate(`C骴igo de horario` = str_remove (`C骴igo de horario`, regex(".*[:digit:]{4}.*", ignore_case = TRUE))) %>%
-  separate (`C骴igo de horario`, c("Docente1", "Docente2"), sep = "(\\s)y(\\s)|-", fill = "right") %>%
+  mutate(`C贸digo de horario` = chartr("谩茅铆贸煤脕脡脥脫脷", "aeiouAEIOU", `C贸digo de horario`)) %>%
+  mutate(`C贸digo de horario` = str_remove (`C贸digo de horario`, regex(".*Do.*ente[:alpha:]*[^[:alpha:]]{0,2}", ignore_case = TRUE))) %>%
+  mutate(`C贸digo de horario` = str_remove (`C贸digo de horario`, regex(".*Grupo\\s*\\d[^[:alpha:]]{0,3}", ignore_case = TRUE)))%>%
+  mutate(`C贸digo de horario` = str_remove (`C贸digo de horario`, regex(".*EFI[^[:alpha:]]{0,3}", ignore_case = TRUE)))%>%
+  mutate(`C贸digo de horario` = str_remove (`C贸digo de horario`, regex(".*\\d{1,2}/\\d{1,2}[^[:alpha:]]{0,3}", ignore_case = TRUE)))%>%
+  mutate(`C贸digo de horario` = str_remove (`C贸digo de horario`, regex("[^a-z]{0,3}Codigo.*", ignore_case = TRUE)))%>%
+  mutate(`C贸digo de horario` = str_remove (`C贸digo de horario`, regex(".*confirma.*", ignore_case = TRUE)))%>%
+  mutate(`C贸digo de horario` = str_remove (`C贸digo de horario`, regex(".*informa.*", ignore_case = TRUE)))%>%
+  mutate(`C贸digo de horario` = str_remove (`C贸digo de horario`, regex(".*plenario.*", ignore_case = TRUE))) %>%
+  mutate(`C贸digo de horario` = str_remove (`C贸digo de horario`, regex(".*[:digit:]{4}.*", ignore_case = TRUE))) %>%
+  separate (`C贸digo de horario`, c("Docente1", "Docente2"), sep = "(\\s)y(\\s)|-", fill = "right") %>%
   gather("Orden", "nombre.ficha.uco", c(Docente1, Docente2)) %>%
   filter(Orden != "Docente2" | !is.na(nombre.ficha.uco)) %>%
   select(grupo, nombre.ficha.uco) %>%
   mutate_all(na_if,"") %>%
   arrange(grupo)
 
-#genero un DF con cada horario, el tipo de dispositivo y el docente responsable
+#genero un DF con cada horario, el tipo de dispositivo y el docente responsable----
 ucos_horarios = ucos_horarios %>%
   left_join(., ucos_horarios_docentes, by="grupo") %>% 
   left_join(., ucos_horarios_dispositivos, by="grupo")
 
 rm(ucos_horarios_dispositivos, ucos_horarios_docentes, ucos_horarios_plenario, ucos_horarios_seminario)
 
-#agrego grupos totales y seg鷑 dispositivo----
+#agrego grupos totales y seg煤n dispositivo----
 ucos = ucos_horarios %>%
   filter (Dispositivo == "Plenario") %>% 
   distinct(grupo, .keep_all = TRUE) %>%
@@ -128,15 +129,21 @@ ucos = ucos_horarios %>%
   left_join(ucos_listado, ., by="enlace.SIFP.ucos")
 
 ucos = ucos_horarios %>%
-  filter (Dispositivo == "Seminarios") %>% 
+  filter (Dispositivo == "Seminario") %>% 
   distinct(grupo, .keep_all = TRUE) %>%
   group_by(enlace.SIFP.ucos) %>%
   summarise (Cantidad.seminarios = n()) %>%
   left_join(ucos, ., by="enlace.SIFP.ucos")
 
 ucos = ucos_horarios %>%
+  distinct(grupo, .keep_all = TRUE) %>%
   group_by(enlace.SIFP.ucos) %>%
-  summarise (Cantidad.grupos = n()) %>%
+  summarise (Cantidad.horarios = n()) %>%
+  left_join(ucos, ., by="enlace.SIFP.ucos")
+
+ucos = ucos_horarios %>%
+  group_by(enlace.SIFP.ucos) %>%
+  summarise (Cantidad.docentes = n()) %>%
   left_join(ucos, ., by="enlace.SIFP.ucos")
 
 rm(ucos_listado)
