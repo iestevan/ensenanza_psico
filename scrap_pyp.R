@@ -62,7 +62,7 @@ for(i in pyp_listado$enlace.SIFP.pyp){
   # # Obtengo creditos por optativa
   texto = as.character(web)
   texto_ok = str_replace_all(texto, "[\r\n]" , "")
-  get_creditos = 'Cr�ditos:.</div><div class=\\\"field-items\\\"><div class=\\\"field-item even\\\">([^</div]*)'
+  get_creditos = 'Créditos:.</div><div class=\\\"field-items\\\"><div class=\\\"field-item even\\\">([^</div]*)'
   creditos = str_match(texto_ok, get_creditos)
   
   lista$creditos = creditos[2]
