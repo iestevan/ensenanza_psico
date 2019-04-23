@@ -10,7 +10,6 @@ library(tibble)
 library(reshape2)
 library(httr)
 library(stringr)
-library(splitstackshape) 
 
 #----
 #PyPs
@@ -39,10 +38,14 @@ for (i in year){
 }
 rm(year, ciclo, i, j, pyp, nodo_pyp, enlaces)
 pyp_listado = pyp_listado %>%
-  select (-Instituto) %>% 
-  distinct() %>% 
-  select (ciclo, Año, Código,`Código de horario`, Cupos, ciclo, enlace.SIFP.pyp)
-
+  select (-Instituto) %>%
+  distinct() %>%
+  select (ciclo, Año, Código,`Código de horario`, `Docente Responsable`, Cupos, ciclo, enlace.SIFP.pyp) %>%
+  separate (`Docente Responsable`, c("Apellido", "Nombre"), sep = ",") %>%
+  unite ("nombre.SIFP", c(Nombre, Apellido), sep = " ") %>%
+  mutate(nombre.SIFP = str_trim(nombre.SIFP, side = "both"))
+  
+  
 rep = data.frame(origen = c("á", "é", "í", "ó", "ú", "ñ"), destino = c("a", "e", "i", "o", "u", "n"))
 for (i in 1:nrow(rep)){
   origen = rep[i, "origen"]
@@ -62,7 +65,7 @@ for(i in pyp_listado$enlace.SIFP.pyp){
   # # Obtengo creditos por optativa
   texto = as.character(web)
   texto_ok = str_replace_all(texto, "[\r\n]" , "")
-  get_creditos = 'Cr�ditos:.</div><div class=\\\"field-items\\\"><div class=\\\"field-item even\\\">([^</div]*)'
+  get_creditos = 'Créditos:.</div><div class=\\\"field-items\\\"><div class=\\\"field-item even\\\">([^</div]*)'
   creditos = str_match(texto_ok, get_creditos)
   
   lista$creditos = creditos[2]
@@ -85,8 +88,31 @@ for(i in pyp_listado$enlace.SIFP.pyp){
 rm(i, web, lista, get_creditos, creditos, texto, texto_ok, enlace.SIFP.docente)
 names(pyp_docentes) = c("enlace.SIFP.pyp", "creditos", "enlace.SIFP.docente")
 
-pyp_listado <-pyp_listado %>% 
-  left_join(., pyp_docentes, by="enlace.SIFP.pyp")
-rm(pyp_docentes)
+#en las fichas a veces se indica campo y entonces se repite el/los docentes
+pyp_docentes = pyp_docentes %>% 
+  distinct(enlace.SIFP.pyp, enlace.SIFP.docente, .keep_all = TRUE)
 
-save(pyp_listado,file="pyp_listado.RData")
+#reemplazo los NAs con el enlace al SIFP del docente responsable
+#diccionario2 = read.csv("diccionario2_mano.csv", header = TRUE)
+
+pyp_docentes_faltantes = pyp_docentes %>% 
+  filter (is.na(enlace.SIFP.docente)) %>% 
+  select(-enlace.SIFP.docente) %>% 
+  left_join(., select(pyp_listado, enlace.SIFP.pyp, nombre.SIFP), by="enlace.SIFP.pyp") %>% 
+  left_join(., select(docentes_SIFP, nombre.SIFP, enlace.SIFP.docente), by="nombre.SIFP") %>% 
+  distinct()
+
+pyp_docentes = pyp_docentes %>% 
+  filter (!is.na(enlace.SIFP.docente)) %>% 
+  rbind (., select(pyp_docentes_faltantes, enlace.SIFP.pyp, creditos, enlace.SIFP.docente))
+
+#agrego numero de docentes al listado----
+pyp = pyp_docentes %>% 
+  group_by (enlace.SIFP.pyp, creditos) %>% 
+  summarise (Cantidad.docentes = n()) %>% 
+  left_join(pyp_listado, ., by="enlace.SIFP.pyp")
+rm (pyp_listado)
+
+#guardo las salidas----
+save(pyp,file="pyp.RData")
+save(pyp_docentes,file="pyp_docentes.RData")
